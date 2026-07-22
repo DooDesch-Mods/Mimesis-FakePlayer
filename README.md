@@ -1,6 +1,6 @@
 # MIMESIS - FakePlayers
 
-> 🛟 **Need help or found a bug?** Get support at [support.doodesch.de](https://support.doodesch.de).
+> 🛟 **Need help or found a bug?** Get support at [support.doodesch.de/fakeplayer](https://support.doodesch.de/fakeplayer).
 
 
 > Spawns configurable fake players into your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
