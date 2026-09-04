@@ -1,4 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- Shared build layer. Two lines per props file, and only one of them ever matches: locally
+	     Workspace is a sibling of this folder, in CI it is checked out INTO this repo. -->
+	<Import Project="$(MSBuildThisFileDirectory)../Workspace/build/GameRefs.props" Condition="Exists('$(MSBuildThisFileDirectory)../Workspace/build/GameRefs.props')" />
+	<Import Project="$(MSBuildThisFileDirectory)Workspace/build/GameRefs.props" Condition="Exists('$(MSBuildThisFileDirectory)Workspace/build/GameRefs.props')" />
+	<Import Project="$(MSBuildThisFileDirectory)../Workspace/build/Deploy.props" Condition="Exists('$(MSBuildThisFileDirectory)../Workspace/build/Deploy.props')" />
+	<Import Project="$(MSBuildThisFileDirectory)Workspace/build/Deploy.props" Condition="Exists('$(MSBuildThisFileDirectory)Workspace/build/Deploy.props')" />
+	<Import Project="$(MSBuildThisFileDirectory)../Workspace/build/Hardening.props" Condition="Exists('$(MSBuildThisFileDirectory)../Workspace/build/Hardening.props')" />
+	<Import Project="$(MSBuildThisFileDirectory)Workspace/build/Hardening.props" Condition="Exists('$(MSBuildThisFileDirectory)Workspace/build/Hardening.props')" />
+	<Import Project="$(MSBuildThisFileDirectory)../Workspace/build/ModVersion.props" Condition="Exists('$(MSBuildThisFileDirectory)../Workspace/build/ModVersion.props')" />
+	<Import Project="$(MSBuildThisFileDirectory)Workspace/build/ModVersion.props" Condition="Exists('$(MSBuildThisFileDirectory)Workspace/build/ModVersion.props')" />
+
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -6,56 +18,11 @@
 		<RootNamespace>FakePlayers</RootNamespace>
 		<LangVersion>latest</LangVersion>
 		<IsPackable>false</IsPackable>
-		<Version>1.1.0</Version>
-		<AssemblyVersion>1.1.0.0</AssemblyVersion>
-		<FileVersion>1.1.0.0</FileVersion>
 		<NeutralLanguage>en-US</NeutralLanguage>
 		<AssemblyName>FakePlayers</AssemblyName>
-		<WorkspaceLibPath Condition="'$(WorkspaceLibPath)' == ''">$(MSBuildThisFileDirectory)../Workspace/lib</WorkspaceLibPath>
-		<GameManagedPath Condition="'$(GameManagedPath)' == ''">$(MSBuildThisFileDirectory)../Workspace/lib/game</GameManagedPath>
-		<MelonLoaderPath Condition="'$(MelonLoaderPath)' == ''">$(MSBuildThisFileDirectory)../Workspace/lib/melonloader</MelonLoaderPath>
+		<!-- The real version comes from the release tag as -p:Version and reaches MelonInfo through
+		     DooDesch.ModVersion.Current (Workspace/build/ModVersion.props). -->
+		<Version Condition="'$(Version)' == ''">0.0.0-dev</Version>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<Reference Include="Assembly-CSharp">
-			<HintPath>$(GameManagedPath)/Assembly-CSharp.dll</HintPath>
-		</Reference>
-		<Reference Include="UnityEngine.CoreModule">
-			<HintPath>$(GameManagedPath)/UnityEngine.CoreModule.dll</HintPath>
-		</Reference>
-		<Reference Include="UnityEngine">
-			<HintPath>$(GameManagedPath)/UnityEngine.dll</HintPath>
-		</Reference>
-		<Reference Include="MelonLoader">
-			<HintPath>$(MelonLoaderPath)/MelonLoader.dll</HintPath>
-		</Reference>
-		<Reference Include="0Harmony">
-			<HintPath>$(MelonLoaderPath)/0Harmony.dll</HintPath>
-		</Reference>
-	</ItemGroup>
-
-	<PropertyGroup>
-		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-		<NoWarn>MSB3245</NoWarn>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<Compile Include="Core.cs" />
-		<Compile Include="Config\FakePlayersPreferences.cs" />
-		<Compile Include="Patches\VWorldPatches.cs" />
-		<Compile Include="Patches\IVroomPatches.cs" />
-		<Compile Include="Patches\VirtualAcceptSessionPatches.cs" />
-		<Compile Include="Managers\FakePlayerManager.cs" />
-	</ItemGroup>
-	
-	<PropertyGroup>
-		<ModsDirectory>F:\Launcher\SteamLibrary\steamapps\common\MIMESIS\Mods</ModsDirectory>
-		<GameExePath>F:\Launcher\SteamLibrary\steamapps\common\MIMESIS\MIMESIS.exe</GameExePath>
-	</PropertyGroup>
-
-	<Target Name="PostBuild" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
-		<Exec Condition="Exists('$(ModsDirectory)')" Command="cmd /c copy /Y &quot;$(TargetPath)&quot; &quot;$(ModsDirectory)&quot;" ContinueOnError="true" />
-	</Target>
 </Project>
-

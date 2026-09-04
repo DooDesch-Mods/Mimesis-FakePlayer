@@ -117,3 +117,7 @@ Standalone mod (no MimicAPI). References resolve from `Workspace/lib/game` (game
 Author: DooDesch. Provided as-is under the MIT License. Contributions are welcome via pull requests.
 
 Repository: <https://github.com/DooDesch/Mimesis-FakePlayers>
+
+## AI disclosure
+
+The mod icon is AI-generated. Code and configuration are hand-written.

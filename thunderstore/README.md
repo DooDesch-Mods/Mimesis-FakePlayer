@@ -67,3 +67,7 @@ This is a host-only testing tool: run it on the machine that is hosting the test
 ## Links
 
 - Source and releases: <https://github.com/DooDesch/Mimesis-FakePlayers>
+
+## AI disclosure
+
+The mod icon is AI-generated. Code and configuration are hand-written.
