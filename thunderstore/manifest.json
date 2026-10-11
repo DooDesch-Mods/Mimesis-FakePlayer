@@ -1,7 +1,7 @@
 {
   "name": "FakePlayers",
   "version_number": "0.0.0",
-  "website_url": "https://github.com/DooDesch/Mimesis-FakePlayers",
+  "website_url": "https://github.com/DooDesch-Mods/Mimesis-FakePlayer",
   "description": "Emulates additional players for testing purposes. Useful for testing multiplayer mods like TooManyPlayers when you don't have friends available to join your game.",
   "dependencies": [
     "LavaGang-MelonLoader-0.7.3"
@@ -10,6 +10,5 @@
     "DooDesch"
   ]
 }
-
 
 

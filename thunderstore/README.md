@@ -3,21 +3,21 @@
 > 🛟 **Need help or found a bug?** Get support at [support.doodesch.de/fakeplayer](https://support.doodesch.de/fakeplayer).
 
 
-> Spawns configurable fake players into your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
+> Registers configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.1-blue)
 ![Game](https://img.shields.io/badge/game-MIMESIS-purple)
 ![MelonLoader](https://img.shields.io/badge/MelonLoader-0.7.3+-green)
 ![Status](https://img.shields.io/badge/status-working-brightgreen)
 
-FakePlayers injects dummy player sessions right after you register as the host, so you can exercise player-count and session logic on your own machine. It pairs naturally with a player-limit mod such as MorePlayers (formerly TooManyPlayers): raise that mod's cap, set how many fakes you want here, and start a session to test the higher limit.
+FakePlayers injects dummy player sessions right after you register as the host, so you can exercise player-count and session logic on your own machine. It pairs naturally with TooManyPlayers: raise that mod's cap, set how many fakes you want here, and start a session to test the higher limit.
 
 ## Features
 
 - Injects fake players once, automatically, right after your own host registration succeeds.
 - Creates virtual player sessions through the game's local/offline session system, each with a unique SteamID, a unique player UID, and a name like `FakePlayer1`, `FakePlayer2`, and so on.
 - Lets fake players bypass the default 4-player room cap while real players still hit the normal limit.
-- Provides a spawn-point fallback so fake-player creation does not fail when a room has no spawn points.
+- Logs room-entry and spawn-point failures.
 - Gives each fake session a unique session ID to avoid collisions between simultaneous fakes.
 - Logs extensively across the join pipeline so you can trace whether fakes actually entered the room.
 
@@ -25,10 +25,10 @@ FakePlayers injects dummy player sessions right after you register as the host, 
 
 | Component | Version |
 |-----------|---------|
-| MIMESIS | 0.3.0 (current Steam build) |
+| MIMESIS | 0.3.2 |
 | MelonLoader | 0.7.3+ |
 
-MelonLoader is the only hard dependency. A player-limit mod (MorePlayers / formerly TooManyPlayers) is recommended but optional.
+MelonLoader is the only hard dependency. TooManyPlayers is recommended for testing higher player counts but optional.
 
 ## Installation
 
@@ -53,7 +53,7 @@ No keybinds and no in-game UI - FakePlayers works automatically:
 
 They appear in the session and count toward the player limit, but they are registered sessions only: they do not move, respond to events, or interact with the world.
 
-To test higher player counts, pair FakePlayers with a player-limit mod (MorePlayers / formerly TooManyPlayers): raise that mod's max players, set `FakePlayerCount` accordingly (for example `7` for 8 total), then start a session.
+To test higher player counts, pair FakePlayers with TooManyPlayers (`DooDesch/TooManyPlayers` on Thunderstore): raise that mod's max players, set `FakePlayerCount` accordingly (for example `7` for 8 total), then start a session.
 
 This is a host-only testing tool: run it on the machine that is hosting the test session.
 
@@ -66,8 +66,10 @@ This is a host-only testing tool: run it on the machine that is hosting the test
 
 ## Links
 
-- Source and releases: <https://github.com/DooDesch/Mimesis-FakePlayers>
+- Source and releases: <https://github.com/DooDesch-Mods/Mimesis-FakePlayer>
 
 ## AI disclosure
 
-The mod icon is AI-generated. Code and configuration are hand-written.
+The mod icon is AI-generated.
+
+Built against MIMESIS 0.3.2 / MelonLoader 0.7.3.

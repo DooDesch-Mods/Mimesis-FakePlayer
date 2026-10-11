@@ -3,14 +3,14 @@
 > 🛟 **Need help or found a bug?** Get support at [support.doodesch.de/fakeplayer](https://support.doodesch.de/fakeplayer).
 
 
-> Spawns configurable fake players into your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
+> Registers configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.1-blue)
 ![Game](https://img.shields.io/badge/game-MIMESIS-purple)
 ![MelonLoader](https://img.shields.io/badge/MelonLoader-0.7.3+-green)
 ![Status](https://img.shields.io/badge/status-working-brightgreen)
 
-FakePlayers injects dummy player sessions right after you register as the host, so you can exercise player-count and session logic on your own machine. It pairs naturally with a player-limit mod such as MorePlayers (formerly TooManyPlayers): raise that mod's cap, set how many fakes you want here, and start a session to test the higher limit.
+FakePlayers injects dummy player sessions right after you register as the host, so you can exercise player-count and session logic on your own machine. It pairs naturally with TooManyPlayers: raise that mod's cap, set how many fakes you want here, and start a session to test the higher limit.
 
 ---
 
@@ -33,10 +33,9 @@ FakePlayers injects dummy player sessions right after you register as the host, 
 - Injects fake players once, automatically, via a Harmony Postfix on the host registration path (`VWorld.RegistPlayer`) - only after your own host registration succeeds.
 - Creates virtual player sessions through the game's `VirtualAcceptSession` + `SessionContext` system (the path used for local/offline play). Each fake gets a unique SteamID, a unique player UID, and a name like `FakePlayer1`, `FakePlayer2`, and so on.
 - Lets fake players bypass the default 4-player room cap: a Prefix on `IVroom.CanEnterChannel` returns success for fake-player UIDs regardless of current room count, while real players still hit the normal limit.
-- Provides a spawn-point fallback (Prefix/Postfix on `IVroom.GetPlayerStartPoint`) that synthesizes a default spawn at origin when the room has none, so fake-player creation does not fail.
+- Logs room-entry and spawn-point failures.
 - Patches `VirtualAcceptSession.get_ID` to return a unique session ID per fake session via an internal mapping table, avoiding ID collisions between simultaneous fake sessions.
 - Logs extensively across the join pipeline (room entry, queue processing, `SessionContext.CreatePlayer`, enter-room failures) so you can trace whether fakes actually entered the room.
-- Cleanly removes fake players and clears the session-ID mapping on teardown.
 
 ---
 
@@ -44,7 +43,7 @@ FakePlayers injects dummy player sessions right after you register as the host, 
 
 | Component | Version |
 |-----------|---------|
-| MIMESIS | 0.3.0 (current Steam build) |
+| MIMESIS | 0.3.2 |
 | MelonLoader | 0.7.3+ |
 
 ---
@@ -53,7 +52,7 @@ FakePlayers injects dummy player sessions right after you register as the host, 
 
 - **Recommended:** install through a Thunderstore mod manager (r2modman / Gale) and let it resolve MelonLoader for you.
 - **Manual:**
-  1. Download the latest `FakePlayers.dll` from the [releases page](../../releases).
+  1. Download the latest `FakePlayers.dll` from the [releases page](https://github.com/DooDesch-Mods/Mimesis-FakePlayer/releases).
   2. Drop it into `MIMESIS/Mods/`.
   3. Launch the game once to generate the config file at `UserData/MelonPreferences.cfg`.
 
@@ -81,7 +80,7 @@ No keybinds and no in-game UI - FakePlayers works automatically:
 
 They appear in the session and count toward the player limit, but they are registered sessions only: they do not move, respond to events, or interact with the world.
 
-To test higher player counts, pair FakePlayers with a player-limit mod (the original companion is named TooManyPlayers; in this ecosystem it ships on Thunderstore as MorePlayers). Raise that mod's max players, set `FakePlayerCount` accordingly (for example `7` for 8 total), then start a session to exercise the higher limit.
+To test higher player counts, pair FakePlayers with TooManyPlayers (`DooDesch/TooManyPlayers` on Thunderstore). Raise that mod's max players, set `FakePlayerCount` accordingly (for example `7` for 8 total), then start a session to exercise the higher limit.
 
 This is a host-only testing tool: it injects players on the local host machine, so run it on the machine that is hosting the test session.
 
@@ -98,7 +97,7 @@ This is a host-only testing tool: it injects players on the local host machine, 
 
 ## Compatibility
 
-Built for Mimesis 0.3.0 / MelonLoader 0.7.3. This is a multiplayer/host testing tool: it must be run on the host machine, since it injects players locally during host registration.
+Built for Mimesis 0.3.2 / MelonLoader 0.7.3. This is a multiplayer/host testing tool: it must be run on the host machine, since it injects players locally during host registration.
 
 ---
 
@@ -108,7 +107,7 @@ Built for Mimesis 0.3.0 / MelonLoader 0.7.3. This is a multiplayer/host testing 
 dotnet build -c Release
 ```
 
-Standalone mod (no MimicAPI). References resolve from `Workspace/lib/game` (game DLLs) and `Workspace/lib/melonloader`. Target framework is `netstandard2.1`. The PostBuild step copies `FakePlayers.dll` into `MIMESIS/Mods/`.
+Standalone mod (no MimicAPI). References resolve from `Workspace/lib/game` (game DLLs) and `Workspace/lib/melonloader`. Target framework is `netstandard2.1`. The shared deploy configuration defaults to `_Test/MIMESIS/Mods`.
 
 ---
 
@@ -116,8 +115,8 @@ Standalone mod (no MimicAPI). References resolve from `Workspace/lib/game` (game
 
 Author: DooDesch. Provided as-is under the MIT License. Contributions are welcome via pull requests.
 
-Repository: <https://github.com/DooDesch/Mimesis-FakePlayers>
+Repository: <https://github.com/DooDesch-Mods/Mimesis-FakePlayer>
 
 ## AI disclosure
 
-The mod icon is AI-generated. Code and configuration are hand-written.
+The mod icon is AI-generated.
