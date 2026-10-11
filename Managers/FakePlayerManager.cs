@@ -1,236 +1,141 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Reflection;
 using FakePlayers.Config;
-using FakePlayers.Patches;
 using MelonLoader;
-using ReluNetwork.ConstEnum;
-using ReluProtocol;
+using ReluProtocol.C2S;
 using ReluProtocol.Enum;
 
 namespace FakePlayers.Managers
 {
-	internal static class FakePlayerManager
-	{
-		private static readonly List<SessionContext> _fakeSessions = new List<SessionContext>();
-		private static long _fakePlayerUIDCounter = 1000000;
-		private static ulong _fakeSteamIDCounter = 76561198000000000UL;
+    internal static class FakePlayerManager
+    {
+        private static readonly List<FakeSession> _fakeSessions = new List<FakeSession>();
+        private static readonly FieldInfo SessionManagerField = typeof(VWorld).GetField("_sessionManager", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo DispatchersField = typeof(VWorld).GetField("_serverDispatchers", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo VersionField = typeof(VWorld).GetField("Version", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo PlayerField = typeof(SessionContext).GetField("_vPlayer", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo InviteField = typeof(Hub).GetField("steamInviteDispatcher", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo HostContextField = typeof(SessionManager).GetField("_hostSessionContext", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static VWorld _world;
+        private static SessionManager _sessionManager;
+        private static ServerDispatchManager _dispatchers;
+        private static int _remaining;
+        private static int _created;
+        private static bool _removing;
 
-		internal static void CreateFakePlayers(VWorld vworld, GameSessionInfo gameSessionInfo)
-		{
-			if (!FakePlayersPreferences.Enabled)
-			{
-				return;
-			}
+        internal static bool TryGetName(ulong steamID, out string name)
+        {
+            foreach (var session in _fakeSessions)
+            {
+                if (session.Context is SessionContext context && context.SteamID == steamID && steamID != 0)
+                {
+                    name = session.Name;
+                    return true;
+                }
+            }
+            name = null;
+            return false;
+        }
 
-			int fakePlayerCount = FakePlayersPreferences.FakePlayerCount;
-			if (fakePlayerCount <= 0)
-			{
-				return;
-			}
+        internal static void CreateFakePlayers(VWorld world, GameSessionInfo gameSessionInfo)
+        {
+            _world = world;
+            _sessionManager = (SessionManager)(SessionManagerField ?? throw new MissingFieldException("VWorld", "_sessionManager")).GetValue(world);
+            _dispatchers = (ServerDispatchManager)(DispatchersField ?? throw new MissingFieldException("VWorld", "_serverDispatchers")).GetValue(world);
+            _remaining = FakePlayersPreferences.Enabled ? FakePlayersPreferences.FakePlayerCount : 0;
+            _created = 0;
+            if (_remaining > 0) MelonLogger.Msg($"Waiting for the host avatar before joining {_remaining} fake players.");
+        }
 
-			try
-			{
-				MelonLogger.Msg($"Creating {fakePlayerCount} fake players simultaneously...");
+        private static VPlayer GetHostPlayer()
+        {
+            var context = (SessionContext)(HostContextField ?? throw new MissingFieldException("SessionManager", "_hostSessionContext")).GetValue(_sessionManager);
+            return context == null ? null : (VPlayer)(PlayerField ?? throw new MissingFieldException("SessionContext", "_vPlayer")).GetValue(context);
+        }
 
-				var serverDispatchersField = typeof(VWorld).GetField("_serverDispatchers", 
-					System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-				if (serverDispatchersField == null)
-				{
-					MelonLogger.Error("Could not find _serverDispatchers field in VWorld");
-					return;
-				}
+        internal static void Update()
+        {
+            if (_world == null) return;
+            try
+            {
+                if (_removing) { RemoveFakePlayers(null); return; }
+                var host = GetHostPlayer();
+                if (_remaining > 0 && host != null && host.LevelLoadCompleted)
+                {
+                    int number = ++_created;
+                    _remaining--;
+                    var session = new FakeSession(_sessionManager.GetNewSessionID(), _dispatchers, $"FakePlayer{number}");
+                    _fakeSessions.Add(session);
+                    var context = new SessionContext(session);
+                    _sessionManager.Add(context);
+                    session.Request(new JoinServerReq
+                    {
+                        guid = Guid.NewGuid().ToString(),
+                        steamID = 76561198000000000UL + (ulong)number - 1,
+                        nickName = session.Name,
+                        clientVersion = (string)(VersionField ?? throw new MissingFieldException("VWorld", "Version")).GetValue(_world),
+                        roomPassword = ((SteamInviteDispatcher)(InviteField ?? throw new MissingFieldException("Hub", "steamInviteDispatcher")).GetValue(Hub.s)).RoomPassword,
+                        isHost = false
+                    });
+                }
+                foreach (var session in _fakeSessions.ToArray())
+                {
+                    if (session.Failed)
+                    {
+                        if (!session.RemovalRequested)
+                        {
+                            _sessionManager.Remove(session.ID, DisconnectReason.KickByServer);
+                            session.RemovalRequested = true;
+                            MelonLogger.Msg($"Rejected fake session removal requested: {session.Name}, session {session.ID}.");
+                        }
+                        if (_sessionManager.GetSession(session.ID) == null)
+                        {
+                            _fakeSessions.Remove(session);
+                            MelonLogger.Msg($"Rejected fake session removal confirmed: {session.Name}, session {session.ID}.");
+                        }
+                        continue;
+                    }
+                    session.Update(host);
+                }
+            }
+            catch (Exception error)
+            {
+                _remaining = 0;
+                MelonLogger.Error($"Fake player update failed; further joins stopped: {error}");
+                _removing = true;
+            }
+        }
 
-				var serverDispatchers = serverDispatchersField.GetValue(vworld);
-				if (serverDispatchers == null)
-				{
-					MelonLogger.Error("_serverDispatchers is null in VWorld");
-					return;
-				}
-
-				var sessionManagerField = typeof(VWorld).GetField("_sessionManager", 
-					System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-				if (sessionManagerField == null)
-				{
-					MelonLogger.Error("Could not find _sessionManager field in VWorld");
-					return;
-				}
-
-				var sessionManager = sessionManagerField.GetValue(vworld);
-				if (sessionManager == null)
-				{
-					MelonLogger.Error("_sessionManager is null in VWorld");
-					return;
-				}
-
-				var getNewSessionIDMethod = sessionManager.GetType().GetMethod("GetNewSessionID");
-				if (getNewSessionIDMethod == null)
-				{
-					MelonLogger.Error("Could not find GetNewSessionID method in SessionManager");
-					return;
-				}
-
-				// Create all sessions and initiate logins in parallel
-				var playerData = new List<(SessionContext sessionContext, ulong steamID, long playerUID, string name)>();
-
-				for (int i = 0; i < fakePlayerCount; i++)
-				{
-					try
-					{
-						ulong fakeSteamID = _fakeSteamIDCounter + (ulong)i;
-						long fakePlayerUID = _fakePlayerUIDCounter + i;
-						string fakeName = $"FakePlayer{i + 1}";
-						string fakeGUID = System.Guid.NewGuid().ToString();
-						
-						var virtualSessionType = typeof(VirtualAcceptSession);
-						var virtualSession = Activator.CreateInstance(virtualSessionType, serverDispatchers);
-						
-						int newSessionId = (int)getNewSessionIDMethod.Invoke(sessionManager, null);
-						VirtualAcceptSessionPatches.SetSessionIdMapping(virtualSession, newSessionId);
-						
-						var sessionContextType = typeof(SessionContext);
-						var sessionContext = Activator.CreateInstance(sessionContextType, virtualSession);
-						lock (_fakeSessions)
-						{
-							_fakeSessions.Add((SessionContext)sessionContext);
-						}
-						
-						var setContextMethod = virtualSessionType.GetMethod("SetContext");
-						setContextMethod?.Invoke(virtualSession, new object[] { sessionContext });
-						
-						((SessionContext)sessionContext).Login(fakePlayerUID, fakeGUID, fakeSteamID,
-							fakeName, string.Empty, isHost: false, roomPassword: string.Empty,
-							isReconnect: false, hashCode: 0);
-						
-						var playerSnapshotProperty = sessionContextType.GetProperty("PlayerInfoSnapshot");
-						if (playerSnapshotProperty != null)
-						{
-							var snapshot = playerSnapshotProperty.GetValue(sessionContext);
-							if (snapshot == null)
-							{
-								MelonLogger.Error($"[FakePlayerManager] PlayerInfoSnapshot is NULL after Login for {fakeName} - CreatePlayer will fail!");
-								continue;
-							}
-						}
-						
-						playerData.Add(((SessionContext)sessionContext, fakeSteamID, fakePlayerUID, fakeName));
-					}
-					catch (Exception ex)
-					{
-						MelonLogger.Error($"Error creating fake player {i + 1}: {ex.Message}\n{ex.StackTrace}");
-					}
-				}
-
-				// Wait for all logins to complete in parallel
-				var loginTasks = playerData.Select(data =>
-				{
-					return Task.Run(() =>
-					{
-						bool loginSuccessful = WaitForLoginCompletion(gameSessionInfo, data.steamID, data.name, maxWaitMs: 500);
-						
-						if (loginSuccessful)
-						{
-							var addMethod = sessionManager.GetType().GetMethod("Add");
-							addMethod?.Invoke(sessionManager, new object[] { data.sessionContext });
-							
-							MelonLogger.Msg($"Created fake player: {data.name} (SteamID: {data.steamID}, UID: {data.playerUID})");
-							return true;
-						}
-						else
-						{
-							MelonLogger.Warning($"Failed to login fake player {data.name} - player was not added to session within timeout");
-							return false;
-						}
-					});
-				}).ToArray();
-
-				// Wait for all login completions
-				Task.WaitAll(loginTasks);
-
-				MelonLogger.Msg($"Successfully created {loginTasks.Count(task => task.Result)} fake players.");
-			}
-			catch (Exception ex)
-			{
-				MelonLogger.Error($"Error in CreateFakePlayers: {ex.Message}\n{ex.StackTrace}");
-			}
-		}
-
-		private static bool WaitForLoginCompletion(GameSessionInfo gameSessionInfo, ulong steamID, string playerName, int maxWaitMs = 500)
-		{
-			const int pollIntervalMs = 10;
-			int maxAttempts = maxWaitMs / pollIntervalMs;
-			
-			for (int attempt = 0; attempt < maxAttempts; attempt++)
-			{
-				try
-				{
-					var totalPlayerSteamIDsProperty = typeof(GameSessionInfo).GetProperty("TotalPlayerSteamIDs", 
-						System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-					if (totalPlayerSteamIDsProperty != null)
-					{
-						var totalPlayerSteamIDs = totalPlayerSteamIDsProperty.GetValue(gameSessionInfo);
-						if (totalPlayerSteamIDs != null)
-						{
-							var containsKeyMethod = totalPlayerSteamIDs.GetType().GetMethod("ContainsKey");
-							if (containsKeyMethod != null)
-							{
-								bool isLoggedIn = (bool)containsKeyMethod.Invoke(totalPlayerSteamIDs, new object[] { steamID });
-								if (isLoggedIn)
-								{
-									return true;
-								}
-							}
-						}
-					}
-				}
-				catch (Exception ex)
-				{
-					MelonLogger.Error($"[FakePlayerManager] Exception checking if player {playerName} was added after login: {ex.Message}");
-				}
-				
-				if (attempt < maxAttempts - 1)
-				{
-					System.Threading.Thread.Sleep(pollIntervalMs);
-				}
-			}
-			
-			return false;
-		}
-
-		internal static bool RemoveFakePlayers(GameSessionInfo gameSessionInfo)
-		{
-			try
-			{
-				foreach (var session in _fakeSessions.ToArray())
-				{
-					try
-					{
-						if (session.SteamID != 0) gameSessionInfo?.RemoveSteamID(session.SteamID);
-						session.Dispose();
-						VirtualAcceptSessionPatches.RemoveSessionIdMapping(session.Session);
-						_fakeSessions.Remove(session);
-					}
-					catch (Exception ex)
-					{
-						MelonLogger.Error($"Error removing fake session for SteamID {session.SteamID}: {ex}");
-					}
-				}
-				
-				if (_fakeSessions.Count != 0)
-				{
-					MelonLogger.Warning($"Fake session cleanup incomplete: {_fakeSessions.Count} contexts remain.");
-					return false;
-				}
-				VirtualAcceptSessionPatches.ClearSessionIdMappings();
-				MelonLogger.Msg("Removed all fake players.");
-				return true;
-			}
-			catch (Exception ex)
-			{
-				MelonLogger.Error($"Error in RemoveFakePlayers: {ex.Message}\n{ex.StackTrace}");
-				return false;
-			}
-		}
-	}
+        internal static bool RemoveFakePlayers(GameSessionInfo gameSessionInfo)
+        {
+            _remaining = 0;
+            _removing = true;
+            foreach (var session in _fakeSessions.ToArray())
+            {
+                try
+                {
+                    if (!session.RemovalRequested)
+                    {
+                        session.RemovalRequested = true;
+                        session.Close(DisconnectReason.KickByServer);
+                        _sessionManager.Remove(session.ID, DisconnectReason.KickByServer);
+                        MelonLogger.Msg($"Fake session removal requested: {session.Name}, session {session.ID}.");
+                    }
+                    if (_sessionManager.GetSession(session.ID) == null) _fakeSessions.Remove(session);
+                }
+                catch (Exception error)
+                {
+                    MelonLogger.Error($"Fake session removal failed: {session.Name}, session {session.ID}: {error}");
+                }
+            }
+            if (_fakeSessions.Count != 0) return false;
+            _world = null;
+            _sessionManager = null;
+            _dispatchers = null;
+            _removing = false;
+            MelonLogger.Msg("Fake session removal confirmed.");
+            return true;
+        }
+    }
 }

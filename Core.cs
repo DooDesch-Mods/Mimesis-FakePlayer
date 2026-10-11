@@ -28,6 +28,10 @@ namespace FakePlayers
 			}
 		}
 
-		public override void OnUpdate() => DooDesch.HostSettings.Update();
+		public override void OnUpdate()
+		{
+			DooDesch.HostSettings.Update();
+			Managers.FakePlayerManager.Update();
+		}
 	}
 }

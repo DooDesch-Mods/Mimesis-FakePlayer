@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4] - 2026-10-11
+
+- Spawn visible idle avatars through the normal client join and level-load handshake.
+- Respect the active player cap so FakePlayers can validate TooManyPlayers.
+- Keep fake clients connected with heartbeats and follow host room transitions.
+- Remove rejected and closed sessions through SessionManager and show their configured names.
+
 ## [1.1.3] - 2026-10-11
 
 - Use the host's fake-player settings for the lobby without changing clients' local config.
