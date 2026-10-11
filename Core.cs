@@ -11,6 +11,7 @@ namespace FakePlayers
 		public override void OnInitializeMelon()
 		{
 			FakePlayersPreferences.Initialize();
+			FakePlayersPreferences.EffectiveValuesChanged += Patches.VWorldPatches.OnSettingsChanged;
 			// Note: HarmonyInstance.PatchAll() is called automatically by MelonLoader via HarmonyInit()
 			// Do NOT call it manually here to avoid double-patching errors
 			
@@ -26,6 +27,7 @@ namespace FakePlayers
 				MelonLogger.Msg("FakePlayers initialized but disabled.");
 			}
 		}
+
+		public override void OnUpdate() => DooDesch.HostSettings.Update();
 	}
 }
-

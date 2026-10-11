@@ -91,6 +91,10 @@ namespace FakePlayers.Managers
 						
 						var sessionContextType = typeof(SessionContext);
 						var sessionContext = Activator.CreateInstance(sessionContextType, virtualSession);
+						lock (_fakeSessions)
+						{
+							_fakeSessions.Add((SessionContext)sessionContext);
+						}
 						
 						var setContextMethod = virtualSessionType.GetMethod("SetContext");
 						setContextMethod?.Invoke(virtualSession, new object[] { sessionContext });
@@ -130,11 +134,6 @@ namespace FakePlayers.Managers
 							var addMethod = sessionManager.GetType().GetMethod("Add");
 							addMethod?.Invoke(sessionManager, new object[] { data.sessionContext });
 							
-							lock (_fakeSessions)
-							{
-								_fakeSessions.Add(data.sessionContext);
-							}
-							
 							MelonLogger.Msg($"Created fake player: {data.name} (SteamID: {data.steamID}, UID: {data.playerUID})");
 							return true;
 						}
@@ -149,7 +148,7 @@ namespace FakePlayers.Managers
 				// Wait for all login completions
 				Task.WaitAll(loginTasks);
 
-				MelonLogger.Msg($"Successfully created {_fakeSessions.Count} fake players.");
+				MelonLogger.Msg($"Successfully created {loginTasks.Count(task => task.Result)} fake players.");
 			}
 			catch (Exception ex)
 			{
@@ -199,48 +198,39 @@ namespace FakePlayers.Managers
 			return false;
 		}
 
-		internal static void RemoveFakePlayers(GameSessionInfo gameSessionInfo)
+		internal static bool RemoveFakePlayers(GameSessionInfo gameSessionInfo)
 		{
 			try
 			{
-				foreach (var session in _fakeSessions)
+				foreach (var session in _fakeSessions.ToArray())
 				{
 					try
 					{
-						var steamIDProperty = typeof(SessionContext).GetProperty("SteamID");
-						if (steamIDProperty != null)
-						{
-							ulong steamID = (ulong)steamIDProperty.GetValue(session);
-							gameSessionInfo.RemoveSteamID(steamID);
-						}
-						
-						var sessionProperty = typeof(SessionContext).GetProperty("Session");
-						if (sessionProperty != null)
-						{
-							var virtualSession = sessionProperty.GetValue(session);
-							if (virtualSession != null)
-							{
-								VirtualAcceptSessionPatches.RemoveSessionIdMapping(virtualSession);
-							}
-						}
-						
-						session?.Dispose();
+						if (session.SteamID != 0) gameSessionInfo?.RemoveSteamID(session.SteamID);
+						session.Dispose();
+						VirtualAcceptSessionPatches.RemoveSessionIdMapping(session.Session);
+						_fakeSessions.Remove(session);
 					}
 					catch (Exception ex)
 					{
-						MelonLogger.Error($"Error removing fake session: {ex.Message}");
+						MelonLogger.Error($"Error removing fake session for SteamID {session.SteamID}: {ex}");
 					}
 				}
 				
-				_fakeSessions.Clear();
+				if (_fakeSessions.Count != 0)
+				{
+					MelonLogger.Warning($"Fake session cleanup incomplete: {_fakeSessions.Count} contexts remain.");
+					return false;
+				}
 				VirtualAcceptSessionPatches.ClearSessionIdMappings();
 				MelonLogger.Msg("Removed all fake players.");
+				return true;
 			}
 			catch (Exception ex)
 			{
 				MelonLogger.Error($"Error in RemoveFakePlayers: {ex.Message}\n{ex.StackTrace}");
+				return false;
 			}
 		}
 	}
 }
-
