@@ -3,14 +3,14 @@
 > 🛟 **Need help or found a bug?** Get support at [support.doodesch.de/fakeplayer](https://support.doodesch.de/fakeplayer).
 
 
-> Registers configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
+> Spawns configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
 
-![Version](https://img.shields.io/badge/version-1.1.3-blue)
+![Version](https://img.shields.io/badge/version-1.1.4-blue)
 ![Game](https://img.shields.io/badge/game-MIMESIS-purple)
 ![MelonLoader](https://img.shields.io/badge/MelonLoader-0.7.3+-green)
 ![Status](https://img.shields.io/badge/status-working-brightgreen)
 
-FakePlayers injects dummy player sessions right after you register as the host, so you can exercise player-count and session logic on your own machine. It pairs naturally with TooManyPlayers: raise that mod's cap, set how many fakes you want here, and start a session to test the higher limit.
+FakePlayers joins simulated clients after your host avatar loads. Each client completes the normal login, room-entry and level-load handshake and appears as an idle player in the game. It pairs naturally with TooManyPlayers: raise that mod's cap, set how many fakes you want here, and start a session to test the higher limit.
 
 ---
 
@@ -30,12 +30,11 @@ FakePlayers injects dummy player sessions right after you register as the host, 
 
 ## Features
 
-- Injects fake players once, automatically, via a Harmony Postfix on the host registration path (`VWorld.RegistPlayer`) - only after your own host registration succeeds.
-- Creates virtual player sessions through the game's `VirtualAcceptSession` + `SessionContext` system (the path used for local/offline play). Each fake gets a unique SteamID, a unique player UID, and a name like `FakePlayer1`, `FakePlayer2`, and so on.
-- Lets fake players bypass the default 4-player room cap: a Prefix on `IVroom.CanEnterChannel` returns success for fake-player UIDs regardless of current room count, while real players still hit the normal limit.
-- Logs room-entry and spawn-point failures.
-- Patches `VirtualAcceptSession.get_ID` to return a unique session ID per fake session via an internal mapping table, avoiding ID collisions between simultaneous fake sessions.
-- Logs extensively across the join pipeline (room entry, queue processing, `SessionContext.CreatePlayer`, enter-room failures) so you can trace whether fakes actually entered the room.
+- Spawns named idle player avatars with unique SteamIDs, player UIDs and session IDs.
+- Uses the normal client admission checks. Fake players respect the active player cap and have no host privileges.
+- Follows the host through room transitions and confirms the level load.
+- Sends heartbeats and removes rejected or closed sessions through the game's SessionManager.
+- Logs requests, confirmed joins, player-limit rejection and response timeouts.
 
 ---
 
@@ -78,9 +77,9 @@ The host's `Enabled` and `FakePlayerCount` apply for the lobby. Joining clients 
 No keybinds and no in-game UI - FakePlayers works automatically:
 
 1. Enable the mod and set `FakePlayerCount` in `UserData/MelonPreferences.cfg` (or via a config UI).
-2. Host / start a session. Fake players are injected once, right after your host registration.
+2. Host / start a session. Fake clients join once your host avatar has loaded.
 
-They appear in the session and count toward the player limit, but they are registered sessions only: they do not move, respond to events, or interact with the world.
+They appear as idle players and count toward the normal player limit. They complete room transitions and stay connected with heartbeats, but they do not walk or play autonomously.
 
 To test higher player counts, pair FakePlayers with TooManyPlayers (`DooDesch/TooManyPlayers` on Thunderstore). Raise that mod's max players, set `FakePlayerCount` accordingly (for example `7` for 8 total), then start a session to exercise the higher limit.
 
@@ -90,8 +89,8 @@ This is a host-only testing tool: it injects players on the local host machine, 
 
 ## Limitations
 
-- Fake players are session-registered only - they will not spawn, move, or interact in-game.
-- They do not respond to game events.
+- Fake players remain idle at the normal spawn points and do not play autonomously.
+- This validates game admission, avatar creation and room transitions. It does not validate real Steam tickets, external relays or many physical Steam clients.
 - Some multiplayer features may not behave correctly with fake players present.
 - Intended for testing player-count and session logic, not for normal play.
 
