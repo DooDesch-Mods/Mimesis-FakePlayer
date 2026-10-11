@@ -5,7 +5,7 @@
 
 > Registers configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue)
+![Version](https://img.shields.io/badge/version-1.1.3-blue)
 ![Game](https://img.shields.io/badge/game-MIMESIS-purple)
 ![MelonLoader](https://img.shields.io/badge/MelonLoader-0.7.3+-green)
 ![Status](https://img.shields.io/badge/status-working-brightgreen)
@@ -38,6 +38,8 @@ MelonLoader is the only hard dependency. TooManyPlayers is recommended for testi
 ## Configuration
 
 Stored in `UserData/MelonPreferences.cfg` under the `FakePlayers` category.
+
+The host's `Enabled` and `FakePlayerCount` apply for the lobby. Joining clients with this mod automatically use those values and keep their local config. A host without FakePlayers creates no fake sessions. Changes apply to the next lobby.
 
 | Option | Description | Default | Values/Range |
 |--------|-------------|---------|--------------|

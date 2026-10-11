@@ -12,7 +12,38 @@ namespace FakePlayers.Patches
 	/// </summary>
 	internal static class VWorldPatches
 	{
-		private static bool _fakePlayersCreated = false;
+		private static VWorld _createdWorld;
+		private static GameSessionInfo _createdSessionInfo;
+
+		internal static void OnSettingsChanged()
+		{
+			if (!FakePlayersPreferences.IsHostSession && !CleanupCreatedPlayers())
+			{
+				MelonLogger.Warning("Fake session cleanup remains incomplete after settings reset; new fake creation is blocked.");
+			}
+		}
+
+		private static bool CleanupCreatedPlayers()
+		{
+			if (_createdWorld == null) return true;
+			if (!FakePlayerManager.RemoveFakePlayers(_createdSessionInfo)) return false;
+			_createdWorld = null;
+			_createdSessionInfo = null;
+			return true;
+		}
+
+		[HarmonyPatch(typeof(VWorld), "OnDestroy")]
+		internal static class DestroyPatch
+		{
+			[HarmonyPrefix]
+			private static void Prefix(VWorld __instance)
+			{
+				if (ReferenceEquals(_createdWorld, __instance) && !CleanupCreatedPlayers())
+				{
+					MelonLogger.Warning("Fake session cleanup incomplete before VWorld.OnDestroy; continuing vanilla world teardown.");
+				}
+			}
+		}
 
 		/// <summary>
 		/// Patch RegistPlayer to add fake players after the host player is registered.
@@ -23,7 +54,7 @@ namespace FakePlayers.Patches
 			private static void Postfix(VWorld __instance, ulong steamID, bool isHost, MsgErrorCode __result)
 			{
 				// Only add fake players if the host registration was successful and we haven't created them yet
-				if (!FakePlayersPreferences.Enabled || __result != MsgErrorCode.Success || !isHost || _fakePlayersCreated)
+				if (!FakePlayersPreferences.Enabled || __result != MsgErrorCode.Success || !isHost || ReferenceEquals(_createdWorld, __instance))
 				{
 					return;
 				}
@@ -55,7 +86,13 @@ namespace FakePlayers.Patches
 					}
 
 					// Create fake players immediately (the game should be ready by now)
-					_fakePlayersCreated = true;
+					if (!CleanupCreatedPlayers())
+					{
+						MelonLogger.Error("Cannot create fake players in the new world: previous fake session cleanup is incomplete.");
+						return;
+					}
+					_createdWorld = __instance;
+					_createdSessionInfo = gameSessionInfo;
 					FakePlayerManager.CreateFakePlayers(__instance, gameSessionInfo);
 				}
 				catch (Exception ex)

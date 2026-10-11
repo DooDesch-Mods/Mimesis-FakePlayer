@@ -15,11 +15,6 @@ namespace FakePlayers.Patches
 		{
 			private static bool Prefix(VirtualAcceptSession __instance, ref int __result)
 			{
-				if (!FakePlayersPreferences.Enabled)
-				{
-					return true;
-				}
-
 				if (_sessionIdMap.TryGetValue(__instance, out int uniqueId))
 				{
 					__result = uniqueId;

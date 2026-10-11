@@ -5,7 +5,7 @@
 
 > Registers configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue)
+![Version](https://img.shields.io/badge/version-1.1.3-blue)
 ![Game](https://img.shields.io/badge/game-MIMESIS-purple)
 ![MelonLoader](https://img.shields.io/badge/MelonLoader-0.7.3+-green)
 ![Status](https://img.shields.io/badge/status-working-brightgreen)
@@ -64,9 +64,11 @@ No extra assets are required - only `FakePlayers.dll`.
 
 Stored in `UserData/MelonPreferences.cfg` under the `FakePlayers` category.
 
+The host's `Enabled` and `FakePlayerCount` apply for the lobby. Joining clients with this mod automatically use those values and keep their local config. A host without FakePlayers creates no fake sessions. Changes apply to the next lobby.
+
 | Option | Description | Default | Values/Range |
 |--------|-------------|---------|--------------|
-| `Enabled` | Enable or disable fake player emulation for testing (display name "Enable Fake Players"). When `false`, all patches early-return and no fake players are created. | `true` | `true` / `false` |
+| `Enabled` | Enable or disable fake player emulation for testing (display name "Enable Fake Players"). When `false`, no fake players are created. | `true` | `true` / `false` |
 | `FakePlayerCount` | Number of fake players to spawn (display name "Fake Player Count"). Default 3 gives a total of 4 players including yourself (the vanilla cap). Clamped on load: below 0 becomes 0, above 32762 becomes 32762. A value of 0 (or less) creates no fake players. | `3` | `0` - `32762` (clamped on load) |
 
 ---
