@@ -95,27 +95,9 @@ namespace FakePlayers.Managers
 						var setContextMethod = virtualSessionType.GetMethod("SetContext");
 						setContextMethod?.Invoke(virtualSession, new object[] { sessionContext });
 						
-						var loginMethod = sessionContextType.GetMethod("Login");
-						if (loginMethod == null)
-						{
-							MelonLogger.Error($"[FakePlayerManager] Could not find Login method in SessionContext");
-							continue;
-						}
-						
-						// Start login for all players (they will proceed in parallel)
-						// Signature (game 0.3.0): Login(long playerUID, string guid, ulong steamID,
-						// string nickName, string voiceUID, bool isHost, string roomPassword, int hashCode)
-						loginMethod.Invoke(sessionContext, new object[]
-						{
-							fakePlayerUID,
-							fakeGUID,
-							fakeSteamID,
-							fakeName,
-							string.Empty, // voiceUID
-							false,        // isHost
-							string.Empty, // roomPassword (added in 0.3.0)
-							0             // hashCode
-						});
+						((SessionContext)sessionContext).Login(fakePlayerUID, fakeGUID, fakeSteamID,
+							fakeName, string.Empty, isHost: false, roomPassword: string.Empty,
+							isReconnect: false, hashCode: 0);
 						
 						var playerSnapshotProperty = sessionContextType.GetProperty("PlayerInfoSnapshot");
 						if (playerSnapshotProperty != null)

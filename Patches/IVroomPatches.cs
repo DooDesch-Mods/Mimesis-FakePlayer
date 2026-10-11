@@ -82,80 +82,26 @@ namespace FakePlayers.Patches
 		[HarmonyPatch(typeof(IVroom), "CanEnterChannel")]
 		internal static class CanEnterChannelPatch
 		{
-			private static bool Prefix(IVroom __instance, long playerUID, out ReluProtocol.Enum.MsgErrorCode __result)
+			private static bool Prefix(long playerUID,
+				VActorDict<int, VPlayer> ____vPlayerDict,
+				ref ReluProtocol.Enum.MsgErrorCode __result)
 			{
-				__result = ReluProtocol.Enum.MsgErrorCode.Success;
-				
-				if (!FakePlayersPreferences.Enabled)
+				if (!FakePlayersPreferences.Enabled || playerUID < 1000000 || playerUID > 1000010)
 				{
-					return true; // Call original method
+					return true;
 				}
 
-				try
+				if (____vPlayerDict.Values.Any(player => player.UID == playerUID))
 				{
-					// Check if player already exists
-					var vPlayerDictField = typeof(IVroom).GetField("_vPlayerDict",
-						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-					if (vPlayerDictField != null)
-					{
-						var vPlayerDict = vPlayerDictField.GetValue(__instance);
-						if (vPlayerDict != null)
-						{
-							var valuesProperty = vPlayerDict.GetType().GetProperty("Values");
-							if (valuesProperty != null)
-							{
-								var players = valuesProperty.GetValue(vPlayerDict);
-								if (players is System.Collections.IEnumerable enumerable)
-								{
-									foreach (var player in enumerable)
-									{
-										var uidField = player.GetType().GetField("UID"); // VActor.UID is a public field, not a property
-										if (uidField != null)
-										{
-											long existingUID = (long)uidField.GetValue(player);
-											if (existingUID == playerUID)
-											{
-												MelonLogger.Error($"[IVroomPatches] CanEnterChannel: Player already exists. playerUID: {playerUID}");
-												__result = ReluProtocol.Enum.MsgErrorCode.DuplicatePlayer;
-												return false; // Skip original method
-											}
-										}
-									}
-								}
-								
-								// Check player count - allow unlimited for fake players
-								var countProperty = vPlayerDict.GetType().GetProperty("Count");
-								if (countProperty != null)
-								{
-									int currentCount = (int)countProperty.GetValue(vPlayerDict);
-									
-									// Check if this is a fake player UID (starts from 1000000)
-									if (playerUID >= 1000000 && playerUID <= 1000010)
-									{
-										// Allow fake players regardless of count
-										MelonLogger.Msg($"[IVroomPatches] CanEnterChannel: Allowing fake player (UID: {playerUID}) - current count: {currentCount}");
-										__result = ReluProtocol.Enum.MsgErrorCode.Success;
-										return false; // Skip original method
-									}
-									
-									// For real players, use the original limit check
-									if (currentCount >= 4)
-									{
-										MelonLogger.Error($"[IVroomPatches] CanEnterChannel: Player count is over limit. playerUID: {playerUID}, currentCount: {currentCount}");
-										__result = ReluProtocol.Enum.MsgErrorCode.PlayerCountExceeded;
-										return false; // Skip original method
-									}
-								}
-							}
-						}
-					}
+					MelonLogger.Error($"[IVroomPatches] CanEnterChannel: Player already exists. playerUID: {playerUID}");
+					__result = ReluProtocol.Enum.MsgErrorCode.DuplicatePlayer;
 				}
-				catch (Exception ex)
+				else
 				{
-					MelonLogger.Error($"[IVroomPatches] Error in CanEnterChannelPrefix: {ex.Message}");
+					MelonLogger.Msg($"[IVroomPatches] CanEnterChannel: Allowing fake player (UID: {playerUID}) - current count: {____vPlayerDict.Count}");
+					__result = ReluProtocol.Enum.MsgErrorCode.Success;
 				}
-				
-				return true; // Call original method
+				return false;
 			}
 		}
 
@@ -244,23 +190,10 @@ namespace FakePlayers.Patches
 											var values = valuesProperty.GetValue(spawnPoints);
 											if (values is System.Collections.IEnumerable enumerable)
 											{
-												var firstMethod = typeof(System.Linq.Enumerable).GetMethods()
-													.FirstOrDefault(m => m.Name == "FirstOrDefault" && m.GetParameters().Length == 1);
-												if (firstMethod != null)
+												var firstSpawnPoint = enumerable.Cast<SpawnPointData>().FirstOrDefault();
+												if (firstSpawnPoint != null)
 												{
-													// Get the actual type from the dictionary values
-													var enumerableType = enumerable.GetType();
-													var elementType = enumerableType.IsGenericType ? enumerableType.GetGenericArguments()[0] : null;
-													
-													if (elementType != null)
-													{
-														var genericMethod = firstMethod.MakeGenericMethod(new[] { elementType });
-														var firstSpawnPoint = genericMethod.Invoke(null, new[] { enumerable });
-														if (firstSpawnPoint != null)
-														{
-															__result = firstSpawnPoint;
-														}
-													}
+													__result = firstSpawnPoint;
 												}
 											}
 										}
