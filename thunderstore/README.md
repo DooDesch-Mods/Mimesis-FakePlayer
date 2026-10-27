@@ -5,7 +5,7 @@
 
 > Spawns configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
 
-![Version](https://img.shields.io/badge/version-1.1.4-blue)
+![Version](https://img.shields.io/badge/version-1.1.5-blue)
 ![Game](https://img.shields.io/badge/game-MIMESIS-purple)
 ![MelonLoader](https://img.shields.io/badge/MelonLoader-0.7.3+-green)
 ![Status](https://img.shields.io/badge/status-working-brightgreen)
@@ -26,7 +26,7 @@ FakePlayers joins simulated clients after your host avatar loads. Each client co
 
 | Component | Version |
 |-----------|---------|
-| MIMESIS | 0.3.2 |
+| MIMESIS | 0.4.0 |
 | MelonLoader | 0.7.3+ |
 
 MelonLoader is the only hard dependency. TooManyPlayers is recommended for testing higher player counts but optional.
@@ -75,4 +75,4 @@ This is a host-only testing tool: run it on the machine that is hosting the test
 
 The mod icon is AI-generated.
 
-Built against MIMESIS 0.3.2 / MelonLoader 0.7.3.
+Built against MIMESIS 0.4.0 / MelonLoader 0.7.3.
