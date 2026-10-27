@@ -68,7 +68,6 @@ namespace FakePlayers.Managers
                     case VRoomType.Waiting: Request(new EnterWaitingRoomReq()); break;
                     case VRoomType.Game: Request(new EnterDungeonReq { roomID = host.VRoom.RoomID }); break;
                     case VRoomType.DeathMatch: Request(new EnterDeathMatchRoomReq()); break;
-                    case VRoomType.Logistics: Request(new EnterLogisticsRoomReq()); break;
                     default: Fail($"Unsupported room type {_nextRoom.Value}"); return;
                 }
                 _nextRoom = null;
@@ -79,7 +78,7 @@ namespace FakePlayers.Managers
         private void Receive(IMsg message)
         {
             bool enter = message is EnterMaintenanceRoomRes || message is EnterWaitingRoomRes ||
-                         message is EnterDungeonRes || message is EnterDeathMatchRoomRes || message is EnterLogisticsRoomRes;
+                         message is EnterDungeonRes || message is EnterDeathMatchRoomRes;
             if (message is JoinServerRes || enter || message is LevelLoadCompleteRes)
             {
                 var response = (IResMsg)message;
@@ -92,7 +91,7 @@ namespace FakePlayers.Managers
                 if (message is JoinServerRes)
                 {
                     _joined = true;
-                    Request(new PlayModeInfoReq());
+                    Request(new CurrentRoomInfoReq());
                 }
                 else if (enter) Request(new LevelLoadCompleteReq());
                 else if (message is LevelLoadCompleteRes loaded)
@@ -106,17 +105,21 @@ namespace FakePlayers.Managers
                 if (heartbeat.errorCode != MsgErrorCode.Success) { Fail($"HeartBeatRes: {heartbeat.errorCode}"); return; }
                 if (++HeartbeatAcknowledgements == 1) MelonLogger.Msg($"Fake heartbeat confirmed: {Name}, session {ID}.");
             }
-            else if (message is PlayModeInfoRes mode)
+            else if (message is CurrentRoomInfoRes mode)
             {
-                if (mode.errorCode != MsgErrorCode.Success) { Fail($"PlayModeInfoRes: {mode.errorCode}"); return; }
+                if (mode.errorCode != MsgErrorCode.Success) { Fail($"CurrentRoomInfoRes: {mode.errorCode}"); return; }
+                if (mode.roomInfo == null || mode.roomInfo.roomType == VRoomType.Invalid)
+                {
+                    Fail("CurrentRoomInfoRes has no joinable room");
+                    return;
+                }
                 _pending = null;
-                _nextRoom = mode.currentRoomType;
+                _nextRoom = mode.roomInfo.roomType;
             }
             else if (message is MoveToMaintenanceRoomSig) _nextRoom = VRoomType.Maintenance;
             else if (message is MoveToWaitingRoomSig) _nextRoom = VRoomType.Waiting;
             else if (message is MoveToDungeonSig) _nextRoom = VRoomType.Game;
             else if (message is MoveToDeathMatchSig) _nextRoom = VRoomType.DeathMatch;
-            else if (message is MoveToLogisticsSig) _nextRoom = VRoomType.Logistics;
         }
 
         private void Fail(string cause, bool full = false)

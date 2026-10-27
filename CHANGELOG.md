@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Use the MIMESIS 0.4.0 current-room protocol when fake clients join. Remove the deleted Logistics room protocol.
+
 ## [1.1.4] - 2026-10-11
 
 - Spawn visible idle avatars through the normal client join and level-load handshake.
