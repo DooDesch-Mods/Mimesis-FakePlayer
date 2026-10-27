@@ -5,10 +5,12 @@
 
 > Spawns configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
 
-![Version](https://img.shields.io/badge/version-1.1.5-blue)
+![Version](https://img.shields.io/badge/version-1.1.6-blue)
 ![Game](https://img.shields.io/badge/game-MIMESIS-purple)
 ![MelonLoader](https://img.shields.io/badge/MelonLoader-0.7.3+-green)
 ![Status](https://img.shields.io/badge/status-working-brightgreen)
+
+![FakePlayers in MIMESIS](https://raw.githubusercontent.com/DooDesch-Mods/Mimesis-FakePlayer/main/docs/img/header.jpg)
 
 FakePlayers joins simulated clients after your host avatar loads. Each client completes the normal login, room-entry and level-load handshake and appears as an idle player in the game. It pairs naturally with TooManyPlayers: raise that mod's cap, set how many fakes you want here, and start a session to test the higher limit.
 
@@ -37,6 +39,16 @@ FakePlayers joins simulated clients after your host avatar loads. Each client co
 - Logs requests, confirmed joins, player-limit rejection and response timeouts.
 
 ---
+
+## Screenshots
+
+![Seven native simulated player avatars arranged in an isolated MIMESIS session](https://raw.githubusercontent.com/DooDesch-Mods/Mimesis-FakePlayer/main/docs/img/simulated-crew.jpg)
+
+Seven simulated clients, arranged for the photo in an isolated session.
+
+![A close-up of three native simulated player avatars](https://raw.githubusercontent.com/DooDesch-Mods/Mimesis-FakePlayer/main/docs/img/crew-closeup.jpg)
+
+A close-up of the same in-game test crew.
 
 ## Requirements
 
@@ -118,6 +130,6 @@ Author: DooDesch. Provided as-is under the MIT License. Contributions are welcom
 
 Repository: <https://github.com/DooDesch-Mods/Mimesis-FakePlayer>
 
-## AI disclosure
+## Images
 
-The mod icon is AI-generated.
+Screenshots and the package icon are captured in MIMESIS.

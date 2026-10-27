@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.6] - 2026-10-28
+
+### Changed
+
+- Replace the package icon and add a thumbnail and gallery captured in MIMESIS.
+
 ## [1.1.5] - 2026-10-27
 
 ### Fixed
