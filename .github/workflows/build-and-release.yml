@@ -31,7 +31,7 @@ jobs:
       library: false
       mimicapi: false
       thunderstore: true
-      nexus: false
+      nexus: true
       api_requirement: false
       operation: ${{ github.event_name == 'push' && 'publish' || inputs.operation }}
       version: ${{ inputs.version }}

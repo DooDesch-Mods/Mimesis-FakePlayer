@@ -18,7 +18,7 @@ jobs:
       library: false
       mimicapi: false
       thunderstore: true
-      nexus: false
+      nexus: true
       api_requirement: false
     secrets:
       WORKSPACE_TOKEN: ${{ secrets.WORKSPACE_TOKEN }}
