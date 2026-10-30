@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using MelonLoader;
+using FakePlayers.Config;
 using ReluNetwork.ConstEnum;
 using ReluProtocol;
 using ReluProtocol.C2S;
@@ -42,7 +43,7 @@ namespace FakePlayers.Managers
             _requests.Enqueue(message);
             if (message is HeartBeatReq) return;
             _pending = message.GetType().Name;
-            _deadline = Time.realtimeSinceStartup + 30f;
+            _deadline = Time.realtimeSinceStartup + FakePlayersPreferences.RequestTimeoutSeconds;
             MelonLogger.Msg($"Fake request: {Name}, {_pending}, session {ID}.");
         }
 
@@ -51,13 +52,13 @@ namespace FakePlayers.Managers
             if (!_running) return;
             if (_pending != null && Time.realtimeSinceStartup >= _deadline)
             {
-                Fail($"{_pending} timed out after 30 seconds");
+                Fail($"{_pending} timed out after {FakePlayersPreferences.RequestTimeoutSeconds:F2} seconds");
                 return;
             }
             if (_joined && Time.realtimeSinceStartup >= _nextHeartbeat)
             {
                 Request(new HeartBeatReq());
-                _nextHeartbeat = Time.realtimeSinceStartup + 10f;
+                _nextHeartbeat = Time.realtimeSinceStartup + FakePlayersPreferences.HeartbeatIntervalSeconds;
             }
             var context = (SessionContext)Context;
             if (_nextRoom.HasValue && !context.ExistPlayer() && host != null && host.LevelLoadCompleted && host.VRoom.Property.vRoomType == _nextRoom.Value)

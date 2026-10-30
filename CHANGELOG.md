@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0] - 2026-10-30
+
+### Changed
+
+- Expose host-controlled name prefix, join interval, response timeout and heartbeat interval.
+- Apply join pacing live; keep player creation and connection structure fixed until the next lobby.
+- Stop pending fake joins and clean up owned fake sessions if host authority is lost.
+
 ## [1.1.6] - 2026-10-28
 
 ### Changed

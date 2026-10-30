@@ -23,6 +23,7 @@ namespace FakePlayers.Managers
         private static int _remaining;
         private static int _created;
         private static bool _removing;
+        private static float _nextJoinTime;
 
         internal static bool TryGetName(ulong steamID, out string name)
         {
@@ -45,6 +46,7 @@ namespace FakePlayers.Managers
             _dispatchers = (ServerDispatchManager)(DispatchersField ?? throw new MissingFieldException("VWorld", "_serverDispatchers")).GetValue(world);
             _remaining = FakePlayersPreferences.Enabled ? FakePlayersPreferences.FakePlayerCount : 0;
             _created = 0;
+            _nextJoinTime = 0;
             if (_remaining > 0) MelonLogger.Msg($"Waiting for the host avatar before joining {_remaining} fake players.");
         }
 
@@ -59,13 +61,21 @@ namespace FakePlayers.Managers
             if (_world == null) return;
             try
             {
-                if (_removing) { RemoveFakePlayers(null); return; }
+                if (!FakePlayersPreferences.IsHostSession && !_removing)
+                {
+                    _remaining = 0;
+                    _removing = true;
+                    MelonLogger.Warning("Fake player authority is unavailable; new joins stopped and owned sessions are being removed.");
+                }
+                if (_removing && !RemoveFakePlayers(null)) return;
+                if (_world == null) return;
                 var host = GetHostPlayer();
-                if (_remaining > 0 && host != null && host.LevelLoadCompleted)
+                if (_remaining > 0 && host != null && host.LevelLoadCompleted && UnityEngine.Time.realtimeSinceStartup >= _nextJoinTime)
                 {
                     int number = ++_created;
                     _remaining--;
-                    var session = new FakeSession(_sessionManager.GetNewSessionID(), _dispatchers, $"FakePlayer{number}");
+                    _nextJoinTime = UnityEngine.Time.realtimeSinceStartup + FakePlayersPreferences.JoinIntervalSeconds;
+                    var session = new FakeSession(_sessionManager.GetNewSessionID(), _dispatchers, $"{FakePlayersPreferences.NamePrefix}{number}");
                     _fakeSessions.Add(session);
                     var context = new SessionContext(session);
                     _sessionManager.Add(context);
