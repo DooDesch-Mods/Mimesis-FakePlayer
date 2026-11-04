@@ -2,6 +2,8 @@
 
 > 🛟 **Need help or found a bug?** Get support at [support.doodesch.de/fakeplayer](https://support.doodesch.de/fakeplayer).
 
+[![Discord](https://mods.doodesch.de/img/badge.svg)](https://mods.doodesch.de)
+
 
 > Spawns configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
 
@@ -94,3 +96,9 @@ This is a host-only testing tool: run it on the machine that is hosting the test
 Screenshots and the package icon are captured in MIMESIS.
 
 Built against MIMESIS 0.4.0 / MelonLoader 0.7.3.
+
+## Community
+
+[![DooDesch Mods on Discord](https://mods.doodesch.de/img/card.svg)](https://mods.doodesch.de)
+
+Join the DooDesch Mods Discord: update pings, polls on what comes next, and playtests of new mods.

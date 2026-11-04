@@ -2,6 +2,8 @@
 
 > 🛟 **Need help or found a bug?** Get support at [support.doodesch.de/fakeplayer](https://support.doodesch.de/fakeplayer).
 
+[![Discord](https://mods.doodesch.de/img/badge.svg)](https://mods.doodesch.de)
+
 
 > Spawns configurable fake players in your Mimesis session so a solo host can test multiplayer mods without needing real friends to join.
 
@@ -127,6 +129,12 @@ dotnet build -c Release
 Standalone mod (no MimicAPI). References resolve from `Workspace/lib/game` (game DLLs) and `Workspace/lib/melonloader`. Target framework is `netstandard2.1`. The shared deploy configuration defaults to `_Test/MIMESIS/Mods`.
 
 ---
+
+## Community
+
+[![DooDesch Mods on Discord](https://mods.doodesch.de/img/card.svg)](https://mods.doodesch.de)
+
+Join the DooDesch Mods Discord: update pings, polls on what comes next, and playtests of new mods.
 
 ## Credits / License
 
